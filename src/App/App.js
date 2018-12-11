@@ -30,7 +30,7 @@ class App extends Component {
             target="_blank"
           >Reactstrap</Button>
         </header>
-      </div>
+      </div >
     );
   }
 }
