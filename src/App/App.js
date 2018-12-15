@@ -1,19 +1,34 @@
 import React, { Component } from 'react';
-import connection from '../helpers/data/connection';
-import Auth from '../components/Auth/Auth';
-import './App.scss';
-import Listings from '../components/Listings/Listings';
-import MyNavbar from '../components/MyNavbar/MyNavbar';
-import authRequest from '../helpers/data/authRequest';
 import firebase from 'firebase/app';
+import 'firebase/auth';
+
+import connection from '../helpers/data/connection';
+
+import Auth from '../components/Auth/Auth';
+import Listings from '../components/Listings/Listings';
+import Building from '../components/Building/Building';
+import ListingForm from '../components/ListingForm/ListingForm';
+import MyNavbar from '../components/MyNavbar/MyNavbar';
+
+import listingRequests from '../helpers/data/listingRequests';
+
+import './App.scss';
+import authRequests from '../helpers/data/authRequests';
 
 class App extends Component {
   state = {
     authed: false,
+    listings: [],
   }
 
   componentDidMount() {
     connection();
+    listingRequests.getRequest()
+      .then((listings) => {
+        this.setState({ listings });
+      })
+      .catch(err => console.error('error with listing GET', err));
+
     this.removeListener = firebase.auth().onAuthStateChanged((user) => {
       if (user) {
         this.setState({
@@ -34,10 +49,21 @@ class App extends Component {
   isAuthenticated = () => {
     this.setState({ authed: true });
   }
-  render() {
 
+  deleteOne = (listingId) => {
+    listingRequests.deleteListing(listingId)
+      .then(() => {
+        listingRequests.getRequest()
+          .then((listings) => {
+            this.setState({ listings });
+          });
+      })
+      .catch(err => console.error('error with delete single', err));
+  }
+
+  render() {
     const logoutClickEvent = () => {
-      authRequest.logoutUser();
+      authRequests.logoutUser();
       this.setState({ authed: false });
     };
 
@@ -45,21 +71,28 @@ class App extends Component {
       return (
         <div className="App">
           <MyNavbar isAuthed={this.state.authed} logoutClickEvent={logoutClickEvent} />
-          < div className="row">
+          <div className="row">
             <Auth isAuthenticated={this.isAuthenticated} />
           </div>
         </div>
       );
     }
-
-
     return (
       <div className="App">
         <MyNavbar isAuthed={this.state.authed} logoutClickEvent={logoutClickEvent} />
-        <Listings />
-
+        <div className="row">
+          <Listings
+            listings={this.state.listings}
+            deleteSingleListing={this.deleteOne}
+          />
+          <Building />
+        </div>
+        <div className="row">
+          <ListingForm />
+        </div>
       </div>
     );
   }
 }
+
 export default App;

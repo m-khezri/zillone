@@ -1,9 +1,9 @@
-import firebase from 'firebase';
+import firebase from 'firebase/app';
 import 'firebase/auth';
 import apiKeys from '../apiKeys';
 
 const firebaseApp = () => {
-  if (!firebase.apps.length) {   // what does it do?
+  if (!firebase.apps.length) {
     firebase.initializeApp(apiKeys.firebaseConfig);
   }
 };
