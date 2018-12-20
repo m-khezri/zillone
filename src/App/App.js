@@ -6,7 +6,7 @@ import connection from '../helpers/data/connection';
 
 import Auth from '../components/Auth/Auth';
 import Listings from '../components/Listings/Listings';
-import Building from '../components/Building/Building';
+import Building from '../components/BuildingTile/BuildingTile';
 import ListingForm from '../components/ListingForm/ListingForm';
 import MyNavbar from '../components/MyNavbar/MyNavbar';
 
@@ -19,6 +19,15 @@ class App extends Component {
   state = {
     authed: false,
     listings: [],
+    isEditing: false,
+    editId: '-1',
+    selectedListingId: -1,
+  }
+
+  listingSelectEvent = (id) => {
+    this.setState({
+      selectedListingId: id,
+    });
   }
 
   componentDidMount() {
@@ -61,16 +70,51 @@ class App extends Component {
       .catch(err => console.error('error with delete single', err));
   }
 
+  formSubmitEvent = (newListing) => {
+    const { isEditing, editId } = this.state;
+    if (isEditing) {
+      listingRequests.putRequest(editId, newListing)
+        .then(() => {
+          listingRequests.getRequest()
+            .then((listings) => {
+              this.setState({ listings, isEditing: false, editId: '-1' });
+            });
+        })
+        .catch(err => console.error('error with listings post', err));
+    } else {
+      listingRequests.postRequest(newListing)
+        .then(() => {
+          listingRequests.getRequest()
+            .then((listings) => {
+              this.setState({ listings });
+            });
+        })
+        .catch(err => console.error('error with listings post', err));
+    }
+  }
+
+  passListingToEdit = listingId => this.setState({ isEditing: true, editId: listingId });
+
   render() {
+    const {
+      authed,
+      listings,
+      isEditing,
+      editId,
+      selectedListingId,
+    } = this.state;
+
+    const selectedListing = listings.find(listing => listing.id === selectedListingId) || { nope: 'nope' };
+
     const logoutClickEvent = () => {
       authRequests.logoutUser();
       this.setState({ authed: false });
     };
 
-    if (!this.state.authed) {
+    if (!authed) {
       return (
         <div className="App">
-          <MyNavbar isAuthed={this.state.authed} logoutClickEvent={logoutClickEvent} />
+          <MyNavbar isAuthed={authed} logoutClickEvent={logoutClickEvent} />
           <div className="row">
             <Auth isAuthenticated={this.isAuthenticated} />
           </div>
@@ -79,16 +123,18 @@ class App extends Component {
     }
     return (
       <div className="App">
-        <MyNavbar isAuthed={this.state.authed} logoutClickEvent={logoutClickEvent} />
+        <MyNavbar isAuthed={authed} logoutClickEvent={logoutClickEvent} />
         <div className="row">
           <Listings
-            listings={this.state.listings}
+            listings={listings}
             deleteSingleListing={this.deleteOne}
+            passListingToEdit={this.passListingToEdit}
+            onListingSelection={this.listingSelectEvent}
           />
-          <Building />
+          <Building listing={selectedListing} />
         </div>
         <div className="row">
-          <ListingForm />
+          <ListingForm onSubmit={this.formSubmitEvent} isEditing={isEditing} editId={editId} />
         </div>
       </div>
     );
