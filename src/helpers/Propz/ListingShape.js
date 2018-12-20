@@ -1,4 +1,3 @@
-
 import PropTypes from 'prop-types';
 
 const listingShape = PropTypes.shape({
@@ -13,4 +12,11 @@ const listingShape = PropTypes.shape({
   uid: PropTypes.string.isRequired,
 });
 
-export default listingShape;
+const listingOptionalShape = PropTypes.oneOfType([
+  PropTypes.shape({
+    nope: PropTypes.string.isRequired,
+  }),
+  listingShape,
+]);
+
+export default { listingShape, listingOptionalShape };
